@@ -24,7 +24,7 @@ end
 function WorldEffects:Init()
     task.spawn(function()
         while running do
-            task.wait(0.2)
+            task.wait(0.1)
 
             if settings.antiFlash then
                 local player = Players.LocalPlayer
@@ -46,7 +46,7 @@ function WorldEffects:Init()
 
     task.spawn(function()
         while running do
-            task.wait(0.5)
+            task.wait(0.1)
 
             if settings.antiSmoke then
                 local debris = Workspace:FindFirstChild("Debris")
