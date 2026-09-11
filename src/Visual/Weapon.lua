@@ -1,87 +1,71 @@
-local Weapon = {}
+local WorldEffects = {}
 
-local enabled = false
-local running = false
+local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
+local Workspace = game:GetService("Workspace")
 
-local WEAPON_COLOR = Color3.fromRGB(85, 0, 255)
+local settings = {
+    antiFlash = false,
+    antiSmoke = false
+}
 
-local function applyWeapon()
-    local camera = workspace.CurrentCamera
+local running = true
 
-    if not camera then
-        return
+function WorldEffects:SetSetting(key, value)
+    if settings[key] ~= nil then
+        settings[key] = value
     end
+end
 
-    local weapon = camera:FindFirstChildOfClass("Model")
+function WorldEffects:GetSetting(key)
+    return settings[key]
+end
 
-    if not weapon then
-        return
-    end
+function WorldEffects:Init()
+    task.spawn(function()
+        while running do
+            task.wait(0.2)
 
-    for _, part in ipairs(weapon:GetDescendants()) do
-        if part:IsA("BasePart") then
-            part.Color = WEAPON_COLOR
-            part.Material = Enum.Material.ForceField
-            part.MaterialVariant = ""
+            if settings.antiFlash then
+                local player = Players.LocalPlayer
+                local playerGui = player and player:FindFirstChild("PlayerGui")
 
-            local surface = part:FindFirstChildOfClass("SurfaceAppearance")
+                local flash = playerGui and playerGui:FindFirstChild("FlashbangEffect")
+                local effect = Lighting:FindFirstChild("FlashbangColorCorrection")
 
-            if surface then
-                surface:Destroy()
-            end
+                if flash then
+                    flash:Destroy()
+                end
 
-            for _, object in ipairs(part:GetChildren()) do
-                if object:IsA("Texture") or object:IsA("Decal") then
-                    object:Destroy()
+                if effect then
+                    effect:Destroy()
                 end
             end
-
-            if part:IsA("MeshPart") then
-                part.TextureID = ""
-            end
         end
-    end
-end
-
-function Weapon:SetEnabled(value)
-    enabled = value == true
-
-    if enabled then
-        applyWeapon()
-    end
-end
-
-function Weapon:IsEnabled()
-    return enabled
-end
-
-function Weapon:Refresh()
-    if enabled then
-        applyWeapon()
-    end
-end
-
-function Weapon:Init()
-    if running then
-        return
-    end
-
-    running = true
+    end)
 
     task.spawn(function()
         while running do
-            if enabled then
-                pcall(applyWeapon)
-            end
+            task.wait(0.5)
 
-            task.wait(0.2)
+            if settings.antiSmoke then
+                local debris = Workspace:FindFirstChild("Debris")
+
+                if debris then
+                    for _, object in ipairs(debris:GetChildren()) do
+                        if string.match(object.Name, "Voxel") then
+                            object:ClearAllChildren()
+                            object:Destroy()
+                        end
+                    end
+                end
+            end
         end
     end)
 end
 
-function Weapon:Destroy()
-    enabled = false
+function WorldEffects:Destroy()
     running = false
 end
 
-return Weapon
+return WorldEffects
