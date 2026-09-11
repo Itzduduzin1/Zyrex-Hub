@@ -98,6 +98,11 @@ local function OpenHub()
     local Weapon = loadModule("src/Visual/Weapon.lua")
     local WorldEffects = loadModule("src/Visual/WorldEffects.lua")
     local Aimbot = loadModule("src/Combat/Aimbot.lua")
+    local Hitbox = loadModule("src/Combat/Hitbox.lua")
+
+    if Hitbox and Hitbox.Init then
+        Hitbox:Init()
+    end
 
     if ESP and ESP.Init then
         ESP:Init()
@@ -229,13 +234,17 @@ end
 
     end
 
-    --==============================
-    -- COMBAT
-    --==============================
+ --==============================
+-- COMBAT
+--==============================
 
-   local CombatSection = CombatPage:addSection(
+local CombatSection = CombatPage:addSection(
     "Combat"
 )
+
+--==============================
+-- AIMBOT
+--==============================
 
 if Aimbot then
 
@@ -288,6 +297,42 @@ if Aimbot then
 else
 
     warn("[Zyrex Hub] Aimbot não foi carregado.")
+
+end
+
+--==============================
+-- HITBOX TARGET
+--==============================
+
+if Hitbox then
+
+    CombatSection:addToggle(
+        "Hitbox",
+        false,
+        function(value)
+            Hitbox:SetSetting(
+                "enabled",
+                value
+            )
+        end
+    )
+
+    CombatSection:addSlider(
+        "Hitbox Size",
+        5,
+        1,
+        50,
+        function(value)
+            Hitbox:SetSetting(
+                "size",
+                value
+            )
+        end
+    )
+
+else
+
+    warn("[Zyrex Hub] Hitbox não foi carregado.")
 
 end
     -- Seus módulos de Combat entram aqui.
