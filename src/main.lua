@@ -231,6 +231,51 @@ local function OpenHub()
     local CombatSection = CombatPage:addSection(
         "Combat"
     )
+    CombatSection:addToggle(
+    "Aimbot",
+    false,
+    function(value)
+        Aimbot:SetSetting(
+            "enabled",
+            value
+        )
+    end
+)
+
+CombatSection:addSlider(
+    "FOV",
+    150,
+    50,
+    500,
+    function(value)
+        Aimbot:SetSetting(
+            "fov",
+            value
+        )
+    end
+)
+
+CombatSection:addToggle(
+    "Wall Check",
+    true,
+    function(value)
+        Aimbot:SetSetting(
+            "wallCheck",
+            value
+        )
+    end
+)
+
+CombatSection:addColorPicker(
+    "FOV Color",
+    Color3.fromRGB(128, 0, 255),
+    function(color)
+        Aimbot:SetSetting(
+            "color",
+            color
+        )
+    end
+)
 
     -- Seus módulos de Combat entram aqui.
 
