@@ -16,6 +16,10 @@ local ESP = loadstring(game:HttpGet(
     "https://raw.githubusercontent.com/Itzduduzin1/Zyrex-Hub/refs/heads/main/src/Visual/Esp.lua"
 ))()
 
+loadstring(game:HttpGet(
+    "https://raw.githubusercontent.com/Itzduduzin1/Zyrex-Hub/refs/heads/main/src/Visual/Weapon.lua"
+))()
+
 ESP:Init()
 
 -- =========================================
