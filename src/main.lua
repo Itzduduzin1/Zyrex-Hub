@@ -40,7 +40,7 @@ local Library = loadstring(game:HttpGet(
 ))()
 
 local Venyx = Library.new(
-    "BloxStrike",
+    "Zyrex Hub",
     5013109572
 )
 
@@ -50,6 +50,11 @@ local Venyx = Library.new(
 
 local VisualPage = Venyx:addPage(
     "Visual",
+    5012544693
+)
+
+local CombatPage = Venyx:addPage(
+    "Combat",
     5012544693
 )
 
