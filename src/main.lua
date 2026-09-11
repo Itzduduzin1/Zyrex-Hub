@@ -6,7 +6,7 @@ local Library = loadstring(game:HttpGet(
     "https://raw.githubusercontent.com/RegularVynixu/UI-Libraries/main/Venyx/Source.lua"
 ))()
 
-local Venyx = Library.new("BloxStrike", 5013109572)
+local Venyx = Library.new("Zyrex Hub", 5013109572)
 
 -- =========================================
 -- Carregar módulos
