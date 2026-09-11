@@ -39,7 +39,7 @@ local Venyx = Library.new(
 )
 
 --==================================================
--- KEY SYSTEM
+-- PAGES
 --==================================================
 
 local KeyPage = Venyx:addPage(
@@ -47,121 +47,111 @@ local KeyPage = Venyx:addPage(
     5012544693
 )
 
-local KeySection = KeyPage:addSection(
-    "Acesso"
+local VisualPage = Venyx:addPage(
+    "Visual",
+    5012544693
 )
 
+local CombatPage = Venyx:addPage(
+    "Combat",
+    5012544693
+)
+
+--==================================================
+-- KEY SYSTEM
+--==================================================
+
+local KeySection = KeyPage:addSection("Acesso")
+
 local enteredKey = ""
+local unlocked = false
 
 KeySection:addTextbox(
     "Digite sua Key",
     "",
     function(value)
-        enteredKey = value
+        enteredKey = tostring(value):gsub("^%s*(.-)%s*$", "%1")
     end
 )
 
 --==================================================
--- LOAD HUB
+-- VISUAL MODULES
 --==================================================
 
-local function LoadHub()
+local ESP = loadModule("src/Visual/Esp.lua")
+local Weapon = loadModule("src/Visual/Weapon.lua")
+local WorldEffects = loadModule("src/Visual/WorldEffects.lua")
 
-    --==============================================
-    -- MODULES
-    --==============================================
+--==================================================
+-- VISUAL
+--==================================================
 
-    local ESP = loadModule("src/Visual/Esp.lua")
-    local Weapon = loadModule("src/Visual/Weapon.lua")
-    local WorldEffects = loadModule("src/Visual/WorldEffects.lua")
+local ESPSection = VisualPage:addSection("ESP")
 
-    --==============================================
-    -- INIT
-    --==============================================
+if ESP then
 
-    if ESP and ESP.Init then
+    if ESP.Init then
         ESP:Init()
     end
 
-    if Weapon and Weapon.Init then
+    ESPSection:addToggle(
+        "ESP",
+        false,
+        function(value)
+            if unlocked and ESP.SetEnabled then
+                ESP:SetEnabled(value)
+            end
+        end
+    )
+
+    ESPSection:addKeybind(
+        "ESP Keybind",
+        Enum.KeyCode.E,
+        function()
+            if unlocked
+                and ESP.IsEnabled
+                and ESP.SetEnabled then
+
+                ESP:SetEnabled(
+                    not ESP:IsEnabled()
+                )
+            end
+        end
+    )
+
+end
+
+--==================================================
+-- WEAPON
+--==================================================
+
+local WeaponSection = VisualPage:addSection("Weapon")
+
+if Weapon then
+
+    if Weapon.Init then
         Weapon:Init()
     end
 
-    if WorldEffects and WorldEffects.Init then
-        WorldEffects:Init()
-    end
-
-    --==============================================
-    -- PAGES
-    --==============================================
-
-    local VisualPage = Venyx:addPage(
-        "Visual",
-        5012544693
-    )
-
-    local CombatPage = Venyx:addPage(
-        "Combat",
-        5012544693
-    )
-
-    --==============================================
-    -- VISUAL
-    --==============================================
-
-    local ESPSection = VisualPage:addSection("ESP")
-
-    if ESP then
-
-        ESPSection:addToggle(
-            "ESP",
-            false,
-            function(value)
-                if ESP.SetEnabled then
-                    ESP:SetEnabled(value)
-                end
-            end
-        )
-
-        ESPSection:addKeybind(
-            "ESP Keybind",
-            Enum.KeyCode.E,
-            function()
-                if ESP.IsEnabled and ESP.SetEnabled then
-                    ESP:SetEnabled(
-                        not ESP:IsEnabled()
-                    )
-                end
-            end
-        )
-
-    end
-
-    --==============================================
-    -- WEAPON
-    --==============================================
-
-    local WeaponSection = VisualPage:addSection(
-        "Weapon"
-    )
-
-    if Weapon then
-
-        WeaponSection:addToggle(
-            "Weapon",
-            false,
-            function(value)
+    WeaponSection:addToggle(
+        "Weapon",
+        false,
+        function(value)
+            if unlocked then
                 Weapon:SetSetting(
                     "enabled",
                     value
                 )
             end
-        )
+        end
+    )
 
-        WeaponSection:addKeybind(
-            "Weapon Keybind",
-            Enum.KeyCode.X,
-            function()
+    WeaponSection:addKeybind(
+        "Weapon Keybind",
+        Enum.KeyCode.X,
+        function()
+            if unlocked then
+
                 local current =
                     Weapon:GetSetting("enabled")
 
@@ -169,85 +159,75 @@ local function LoadHub()
                     "enabled",
                     not current
                 )
-            end
-        )
 
-        WeaponSection:addColorPicker(
-            "Weapon Color",
-            Color3.fromRGB(85, 0, 255),
-            function(color)
+            end
+        end
+    )
+
+    WeaponSection:addColorPicker(
+        "Weapon Color",
+        Color3.fromRGB(85, 0, 255),
+        function(color)
+            if unlocked then
                 Weapon:SetSetting(
                     "color",
                     color
                 )
             end
-        )
-
-    end
-
-    --==============================================
-    -- WORLD EFFECTS
-    --==============================================
-
-    local WorldSection = VisualPage:addSection(
-        "World Effects"
+        end
     )
 
-    if WorldEffects then
+end
 
-        WorldSection:addToggle(
-            "Anti Flash",
-            false,
-            function(value)
+--==================================================
+-- WORLD EFFECTS
+--==================================================
+
+local WorldSection = VisualPage:addSection(
+    "World Effects"
+)
+
+if WorldEffects then
+
+    if WorldEffects.Init then
+        WorldEffects:Init()
+    end
+
+    WorldSection:addToggle(
+        "Anti Flash",
+        false,
+        function(value)
+            if unlocked then
                 WorldEffects:SetSetting(
                     "antiFlash",
                     value
                 )
             end
-        )
+        end
+    )
 
-        WorldSection:addToggle(
-            "Anti Smoke",
-            false,
-            function(value)
+    WorldSection:addToggle(
+        "Anti Smoke",
+        false,
+        function(value)
+            if unlocked then
                 WorldEffects:SetSetting(
                     "antiSmoke",
                     value
                 )
             end
-        )
-
-    end
-
-    --==============================================
-    -- COMBAT
-    --==============================================
-
-    local CombatSection = CombatPage:addSection(
-        "Combat"
-    )
-
-    -- Coloque aqui seus módulos de Combat.
-    -- Exemplo:
-    --
-    -- local Aimbot = loadModule("src/Combat/Aimbot.lua")
-    -- etc.
-
-    --==============================================
-    -- SELECT VISUAL
-    --==============================================
-
-    Venyx:SelectPage(
-        VisualPage,
-        true
-    )
-
-    Venyx:Notify(
-        "Zyrex Hub",
-        "Hub liberado!"
+        end
     )
 
 end
+
+--==================================================
+-- COMBAT
+--==================================================
+
+local CombatSection = CombatPage:addSection(
+    "Combat"
+)
 
 --==================================================
 -- LIBERAR
@@ -257,19 +237,24 @@ KeySection:addButton(
     "Liberar",
     function()
 
-        if enteredKey == SCRIPT_KEY then
+        local key = enteredKey
+
+        if key == SCRIPT_KEY then
+
+            unlocked = true
 
             Venyx:Notify(
                 "Zyrex Hub",
-                "Key válida!"
+                "Key válida! Acesso liberado."
             )
 
-            task.wait(0.5)
+            task.wait(0.3)
 
-            LoadHub()
-
-            -- Vai para a página Visual
-            -- depois que ela for criada.
+            -- Vai para Visual
+            Venyx:SelectPage(
+                VisualPage,
+                true
+            )
 
         else
 
