@@ -13,7 +13,7 @@ local Venyx = Library.new("BloxStrike", 5013109572)
 -- =========================================
 
 local ESP = loadstring(game:HttpGet(
-    "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPOSITORIO/main/modules/ESP.lua"
+    "https://raw.githubusercontent.com/Itzduduzin1/Zyrex-Hub/refs/heads/main/src/Visual/Esp.lua"
 ))()
 
 ESP:Init()
