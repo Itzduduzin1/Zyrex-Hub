@@ -4,7 +4,6 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
 local LocalPlayer = Players.LocalPlayer
-local Camera = workspace.CurrentCamera
 local Characters = workspace:WaitForChild("Characters")
 
 local settings = {
@@ -15,35 +14,49 @@ local settings = {
 }
 
 local running = false
-local target = nil
 local connection = nil
-
-local circle
+local circle = nil
 
 --==================================================
 -- FOV
 --==================================================
 
 local function createFOV()
+
     if circle then
         return
     end
 
-    circle = Drawing.new("Circle")
+    local success, result = pcall(function()
 
-    circle.Radius = settings.fov
-    circle.Thickness = 2
-    circle.Filled = false
-    circle.Color = settings.color
-    circle.Visible = false
+        local drawing = Drawing.new("Circle")
+
+        drawing.Radius = settings.fov
+        drawing.Thickness = 2
+        drawing.Filled = false
+        drawing.Color = settings.color
+        drawing.Transparency = 1
+        drawing.Visible = false
+
+        return drawing
+
+    end)
+
+    if success then
+        circle = result
+    else
+        warn("[Aimbot] Drawing não disponível.")
+        warn(result)
+    end
 end
 
 local function updateFOV()
+
     if not circle then
         return
     end
 
-    Camera = workspace.CurrentCamera
+    local Camera = workspace.CurrentCamera
 
     if not Camera then
         return
@@ -64,7 +77,7 @@ end
 -- INIMIGO
 --==================================================
 
-local function isEnemyAlive(character)
+local function isEnemy(character)
 
     local targetPlayer =
         Players:GetPlayerFromCharacter(character)
@@ -101,7 +114,7 @@ end
 -- WALL CHECK
 --==================================================
 
-local function wallCheck(character)
+local function canSee(character)
 
     if not settings.wallCheck then
         return true
@@ -114,7 +127,7 @@ local function wallCheck(character)
         return false
     end
 
-    Camera = workspace.CurrentCamera
+    local Camera = workspace.CurrentCamera
 
     if not Camera then
         return false
@@ -156,92 +169,92 @@ end
 
 local function getTarget()
 
-    Camera = workspace.CurrentCamera
+    local Camera = workspace.CurrentCamera
 
     if not Camera then
         return nil
     end
-
-    local closestCharacter
-    local closestDistance = math.huge
 
     local center = Vector2.new(
         Camera.ViewportSize.X / 2,
         Camera.ViewportSize.Y / 2
     )
 
+    local closest = nil
+    local closestDistance = math.huge
+
     for _, character in ipairs(
         Characters:GetChildren()
     ) do
 
-        if isEnemyAlive(character) then
+        if isEnemy(character) then
 
-            local root =
-                character:FindFirstChild(
-                    "HumanoidRootPart"
-                )
+            local head =
+                character:FindFirstChild("Head")
 
-            if root then
+            if head then
 
-                local screenPosition, onScreen =
+                local position, visible =
                     Camera:WorldToViewportPoint(
-                        root.Position
+                        head.Position
                     )
 
-                if onScreen then
+                if visible then
 
-                    local screenPoint =
+                    local screenPosition =
                         Vector2.new(
-                            screenPosition.X,
-                            screenPosition.Y
+                            position.X,
+                            position.Y
                         )
 
                     local distance =
-                        (screenPoint - center).Magnitude
+                        (screenPosition - center).Magnitude
 
                     if distance <= settings.fov
                     and distance < closestDistance
-                    and wallCheck(character) then
+                    and canSee(character) then
 
+                        closest = character
                         closestDistance = distance
-                        closestCharacter = character
 
                     end
+
                 end
             end
         end
     end
 
-    return closestCharacter
+    return closest
 end
 
 --==================================================
 -- AIM
 --==================================================
 
-local function aimAt(character)
+local function aim(character)
 
     if not character then
         return
     end
 
-    local targetPart =
+    local head =
         character:FindFirstChild("Head")
 
-    if not targetPart then
+    if not head then
         return
     end
 
-    Camera = workspace.CurrentCamera
+    local Camera = workspace.CurrentCamera
 
     if not Camera then
         return
     end
 
-    Camera.CFrame = CFrame.lookAt(
-        Camera.CFrame.Position,
-        targetPart.Position
-    )
+    Camera.CFrame =
+        CFrame.lookAt(
+            Camera.CFrame.Position,
+            head.Position
+        )
 end
 
 --==================================================
@@ -256,7 +269,11 @@ function Aimbot:SetSetting(key, value)
 
     settings[key] = value
 
-    if key == "fov" or key == "color" then
+    if key == "fov" then
+        updateFOV()
+    end
+
+    if key == "color" then
         updateFOV()
     end
 
@@ -265,10 +282,6 @@ end
 function Aimbot:GetSetting(key)
     return settings[key]
 end
-
---==================================================
--- STATUS
---==================================================
 
 function Aimbot:IsEnabled()
     return settings.enabled
@@ -294,14 +307,14 @@ function Aimbot:Init()
             updateFOV()
 
             if not settings.enabled then
-                target = nil
                 return
             end
 
-            target = getTarget()
+            local target =
+                getTarget()
 
             if target then
-                aimAt(target)
+                aim(target)
             end
 
         end
@@ -322,9 +335,8 @@ function Aimbot:Destroy()
         connection = nil
     end
 
-    target = nil
-
     if circle then
+        circle.Visible = false
         circle:Remove()
         circle = nil
     end
