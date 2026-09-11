@@ -16,11 +16,16 @@ local ESP = loadstring(game:HttpGet(
     "https://raw.githubusercontent.com/Itzduduzin1/Zyrex-Hub/refs/heads/main/src/Visual/Esp.lua"
 ))()
 
-loadstring(game:HttpGet(
+local Weapon = loadstring(game:HttpGet(
     "https://raw.githubusercontent.com/Itzduduzin1/Zyrex-Hub/refs/heads/main/src/Visual/Weapon.lua"
 ))()
 
+-- Inicializar módulos
 ESP:Init()
+
+if Weapon.Init then
+    Weapon:Init()
+end
 
 -- =========================================
 -- Página Visual
@@ -30,12 +35,10 @@ local VisualPage = Venyx:addPage("Visual", 5012544693)
 
 local ESPSection = VisualPage:addSection("ESP")
 
--- Toggle
 ESPSection:addToggle("ESP", false, function(value)
     ESP:SetEnabled(value)
 end)
 
--- Keybind configurável
 ESPSection:addKeybind(
     "ESP Keybind",
     Enum.KeyCode.E,
@@ -45,12 +48,25 @@ ESPSection:addKeybind(
     end,
 
     function()
-        print("Tecla do ESP alterada")
+        print("ESP keybind alterado")
     end
 )
 
 -- =========================================
--- Tema
+-- Weapon
+-- =========================================
+
+local WeaponSection = VisualPage:addSection("Weapon")
+
+-- coloque aqui os controles que o Weapon.lua disponibilizar
+-- exemplo:
+--
+-- WeaponSection:addToggle("No Recoil", false, function(value)
+--     Weapon:SetNoRecoil(value)
+-- end)
+
+-- =========================================
+-- Theme
 -- =========================================
 
 local ThemePage = Venyx:addPage("Theme", 5012544693)
