@@ -1,19 +1,12 @@
 local Weapon = {}
 
 local enabled = false
-local connection
+local running = false
 
-local CAMERA_NAME = "Camera"
-
-local WEAPON_COLOR = Color3.fromHex("#5500FF")
-local WEAPON_MATERIAL = Enum.Material.ForceField
+local WEAPON_COLOR = Color3.fromRGB(85, 0, 255)
 
 local function applyWeapon()
-    if not enabled then
-        return
-    end
-
-    local camera = workspace:FindFirstChild(CAMERA_NAME)
+    local camera = workspace.CurrentCamera
 
     if not camera then
         return
@@ -27,9 +20,8 @@ local function applyWeapon()
 
     for _, part in ipairs(weapon:GetDescendants()) do
         if part:IsA("BasePart") then
-
             part.Color = WEAPON_COLOR
-            part.Material = WEAPON_MATERIAL
+            part.Material = Enum.Material.ForceField
             part.MaterialVariant = ""
 
             local surface = part:FindFirstChildOfClass("SurfaceAppearance")
@@ -38,9 +30,9 @@ local function applyWeapon()
                 surface:Destroy()
             end
 
-            for _, obj in ipairs(part:GetChildren()) do
-                if obj:IsA("Texture") or obj:IsA("Decal") then
-                    obj:Destroy()
+            for _, object in ipairs(part:GetChildren()) do
+                if object:IsA("Texture") or object:IsA("Decal") then
+                    object:Destroy()
                 end
             end
 
@@ -55,7 +47,7 @@ function Weapon:SetEnabled(value)
     enabled = value == true
 
     if enabled then
-        self:Refresh()
+        applyWeapon()
     end
 end
 
@@ -70,12 +62,14 @@ function Weapon:Refresh()
 end
 
 function Weapon:Init()
-    if connection then
+    if running then
         return
     end
 
-    connection = task.spawn(function()
-        while connection do
+    running = true
+
+    task.spawn(function()
+        while running do
             if enabled then
                 pcall(applyWeapon)
             end
@@ -87,7 +81,7 @@ end
 
 function Weapon:Destroy()
     enabled = false
-    connection = nil
+    running = false
 end
 
 return Weapon
