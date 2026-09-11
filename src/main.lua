@@ -1,4 +1,4 @@
-local SCRIPT_KEY = "ZYREX-2026"
+local SCRIPT_KEY = "ZYREX"
 
 local BASE_URL =
     "https://raw.githubusercontent.com/Itzduduzin1/Zyrex-Hub/refs/heads/main/"
