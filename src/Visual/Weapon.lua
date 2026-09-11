@@ -1,6 +1,4 @@
 while true do
-    local ex = string.lower(identifyexecutor())
-    if ex ~= "xeno" then return end
     local camera = workspace:FindFirstChild("Camera")
 
     if camera then
