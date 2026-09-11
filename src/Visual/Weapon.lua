@@ -1,71 +1,118 @@
-local WorldEffects = {}
+--==================================================
+-- ZYREX HUB - WEAPON
+--==================================================
 
-local Players = game:GetService("Players")
-local Lighting = game:GetService("Lighting")
+local Weapon = {}
+
 local Workspace = game:GetService("Workspace")
 
 local settings = {
-    antiFlash = false,
-    antiSmoke = false
+    enabled = false,
+    color = Color3.fromRGB(85, 0, 255),
+    material = Enum.Material.ForceField
 }
 
-local running = true
+local running = false
 
-function WorldEffects:SetSetting(key, value)
-    if settings[key] ~= nil then
-        settings[key] = value
+--==================================================
+-- APPLY
+--==================================================
+
+local function applyWeapon(weapon)
+    if not weapon or not weapon:IsA("Model") then
+        return
+    end
+
+    for _, part in ipairs(weapon:GetDescendants()) do
+        if part:IsA("BasePart") then
+
+            part.Color = settings.color
+            part.Material = settings.material
+            part.MaterialVariant = ""
+
+            local surface = part:FindFirstChildOfClass("SurfaceAppearance")
+
+            if surface then
+                surface:Destroy()
+            end
+
+            for _, object in ipairs(part:GetChildren()) do
+                if object:IsA("Texture")
+                    or object:IsA("Decal") then
+
+                    object:Destroy()
+                end
+            end
+
+            if part:IsA("MeshPart") then
+                part.TextureID = ""
+            end
+        end
     end
 end
 
-function WorldEffects:GetSetting(key)
+--==================================================
+-- SETTINGS
+--==================================================
+
+function Weapon:SetSetting(key, value)
+
+    if settings[key] == nil then
+        return
+    end
+
+    settings[key] = value
+end
+
+function Weapon:GetSetting(key)
     return settings[key]
 end
 
-function WorldEffects:Init()
+--==================================================
+-- INIT
+--==================================================
+
+function Weapon:Init()
+
+    if running then
+        return
+    end
+
+    running = true
+
     task.spawn(function()
+
         while running do
+
             task.wait(0.2)
 
-            if settings.antiFlash then
-                local player = Players.LocalPlayer
-                local playerGui = player and player:FindFirstChild("PlayerGui")
+            if settings.enabled then
 
-                local flash = playerGui and playerGui:FindFirstChild("FlashbangEffect")
-                local effect = Lighting:FindFirstChild("FlashbangColorCorrection")
+                local camera = Workspace.CurrentCamera
 
-                if flash then
-                    flash:Destroy()
-                end
+                if camera then
 
-                if effect then
-                    effect:Destroy()
-                end
-            end
-        end
-    end)
+                    local weapon = camera:FindFirstChildOfClass("Model")
 
-    task.spawn(function()
-        while running do
-            task.wait(0.5)
-
-            if settings.antiSmoke then
-                local debris = Workspace:FindFirstChild("Debris")
-
-                if debris then
-                    for _, object in ipairs(debris:GetChildren()) do
-                        if string.match(object.Name, "Voxel") then
-                            object:ClearAllChildren()
-                            object:Destroy()
-                        end
+                    if weapon then
+                        applyWeapon(weapon)
                     end
+
                 end
             end
         end
+
     end)
 end
 
-function WorldEffects:Destroy()
+--==================================================
+-- DESTROY
+--==================================================
+
+function Weapon:Destroy()
+
     running = false
+
 end
 
-return WorldEffects
+return Weapon
