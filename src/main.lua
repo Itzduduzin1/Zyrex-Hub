@@ -48,35 +48,27 @@ KeySection:addTextbox(
 )
 
 local function RemoveKeyPage()
-    local CoreGui = game:GetService("CoreGui")
-    local HubGui = CoreGui:FindFirstChild("Zyrex Hub")
-
-    if not HubGui then
-        warn("[Zyrex Hub] GUI não encontrada.")
-        return
+    -- Remove o botão da lateral
+    if KeyPage.button then
+        KeyPage.button:Destroy()
     end
 
-    -- Remove a página/conteúdo
-    local Main = HubGui:FindFirstChild("Main")
-    if Main then
-        local KeyPage = Main:FindFirstChild("Key System")
-        if KeyPage then
-            KeyPage:Destroy()
+    -- Remove o conteúdo da página
+    if KeyPage.container then
+        KeyPage.container:Destroy()
+    end
+
+    -- Remove a página da lista interna do Venyx
+    for i, page in ipairs(Venyx.pages) do
+        if page == KeyPage then
+            table.remove(Venyx.pages, i)
+            break
         end
     end
 
-    -- Remove o botão "Key System" da barra de páginas
-    local Pages = HubGui:FindFirstChild("Pages")
-    if Pages then
-        local Container = Pages:FindFirstChild("Pages_Container")
-
-        if Container then
-            local KeyButton = Container:FindFirstChild("Key System")
-
-            if KeyButton then
-                KeyButton:Destroy()
-            end
-        end
+    -- Impede que ela continue sendo considerada a página selecionada
+    if Venyx.focusedPage == KeyPage then
+        Venyx.focusedPage = nil
     end
 
     print("[Zyrex Hub] Key System removido.")
