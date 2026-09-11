@@ -47,6 +47,41 @@ KeySection:addTextbox(
     end
 )
 
+local function RemoveKeyPage()
+    local CoreGui = game:GetService("CoreGui")
+    local HubGui = CoreGui:FindFirstChild("Zyrex Hub")
+
+    if not HubGui then
+        warn("[Zyrex Hub] GUI não encontrada.")
+        return
+    end
+
+    -- Remove a página/conteúdo
+    local Main = HubGui:FindFirstChild("Main")
+    if Main then
+        local KeyPage = Main:FindFirstChild("Key System")
+        if KeyPage then
+            KeyPage:Destroy()
+        end
+    end
+
+    -- Remove o botão "Key System" da barra de páginas
+    local Pages = HubGui:FindFirstChild("Pages")
+    if Pages then
+        local Container = Pages:FindFirstChild("Pages_Container")
+
+        if Container then
+            local KeyButton = Container:FindFirstChild("Key System")
+
+            if KeyButton then
+                KeyButton:Destroy()
+            end
+        end
+    end
+
+    print("[Zyrex Hub] Key System removido.")
+end
+
 --==================================================
 -- HUB
 --==================================================
@@ -208,16 +243,22 @@ local function OpenHub()
     -- Seus módulos de Combat entram aqui.
 
     Venyx:Notify(
-        "Zyrex Hub",
-        "Acesso liberado!"
-    )
+    "Zyrex Hub",
+    "Acesso liberado!"
+)
 
-    task.wait(0.2)
+task.wait(0.2)
 
-    Venyx:SelectPage(
-        VisualPage,
-        true
-    )
+-- Vai para Visual primeiro
+Venyx:SelectPage(
+    VisualPage,
+    true
+)
+
+task.wait(0.1)
+
+-- Exclui completamente a Key System da interface
+RemoveKeyPage()
 end
 
 --==================================================
