@@ -1,344 +1,165 @@
---// Zyrex Hub - Aimbot1
---// Integração com o AimAssistController nativo do jogo
---// Não sobrescreve CurrentCamera.CFrame
-
-local Aimbot = {}
+-- Aimbot Diagnostic
+-- Não modifica CurrentCamera.CFrame
+-- Não altera Constants
+-- Não tenta contornar AIM_ASSIST_WHITELIST
 
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
-local AimAssistController = require(
-    ReplicatedStorage.Controllers.AimAssistController
-)
-
-local CharacterResolver = require(
-    ReplicatedStorage.Components.Common.CharacterResolver
-)
-
 local Settings = {
-    Enabled = false,
-
-    -- Visual
-    ShowFOV = true,
+    Enabled = true,
     FOV = 150,
-    FOVThickness = 1.5,
-
-    -- Target
+    MaxDistance = 125,
     TargetPart = "Head",
-    MaxDistance = 1000,
-
-    -- Interface
-    UseNativeAimAssist = true,
-
-    -- Debug
-    Debug = false
+    WallCheck = true
 }
 
-local FOVCircle
-local RenderConnection
-local Destroyed = false
-
-
---========================================================--
--- UTIL
---========================================================--
-
-local function debugPrint(...)
-    if Settings.Debug then
-        print("[Zyrex Aimbot]", ...)
-    end
+local function getCharacter(player)
+    return player.Character
+        or Workspace:FindFirstChild("Characters")
+            and Workspace.Characters:FindFirstChild(player.Name)
 end
 
-
-local function getCamera()
-    Camera = Workspace.CurrentCamera
-    return Camera
-end
-
-
-local function getLocalCharacter()
-    local character
-
-    pcall(function()
-        character = CharacterResolver.getLocalCharacter()
-    end)
-
-    if character then
-        return character
-    end
-
-    return LocalPlayer.Character
-end
-
-
-local function getTargetPart(character)
+local function isAlive(character)
     if not character then
-        return nil
+        return false
     end
 
-    return character:FindFirstChild(Settings.TargetPart)
-        or character:FindFirstChild("Head")
-        or character.PrimaryPart
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+
+    if humanoid and humanoid.Health <= 0 then
+        return false
+    end
+
+    return true
 end
 
-
---========================================================--
--- FOV
---========================================================--
-
-local function createFOV()
-    if FOVCircle then
-        return
+local function sameTeam(player)
+    if player == LocalPlayer then
+        return true
     end
 
-    if not Drawing then
-        debugPrint("Drawing API não disponível.")
-        return
+    local myChar = getCharacter(LocalPlayer)
+    local enemyChar = getCharacter(player)
+
+    if not myChar or not enemyChar then
+        return false
     end
 
-    FOVCircle = Drawing.new("Circle")
+    local myTeam = myChar:GetAttribute("Team")
+    local enemyTeam = enemyChar:GetAttribute("Team")
 
-    FOVCircle.Visible = Settings.ShowFOV
-    FOVCircle.Radius = Settings.FOV
-    FOVCircle.Thickness = Settings.FOVThickness
-    FOVCircle.Filled = false
-    FOVCircle.Transparency = 1
+    if myTeam and enemyTeam then
+        return myTeam == enemyTeam
+    end
 
-    -- Roxo do Zyrex
-    FOVCircle.Color = Color3.fromRGB(128, 0, 255)
+    return player.Team ~= nil
+        and LocalPlayer.Team ~= nil
+        and player.Team == LocalPlayer.Team
 end
 
-
-local function updateFOV()
-    if not FOVCircle then
-        return
+local function visible(part)
+    if not Settings.WallCheck then
+        return true
     end
 
-    local camera = getCamera()
+    local origin = Camera.CFrame.Position
+    local direction = part.Position - origin
 
-    if not camera then
-        FOVCircle.Visible = false
-        return
-    end
+    local params = RaycastParams.new()
+    params.FilterType = Enum.RaycastFilterType.Exclude
+    params.FilterDescendantsInstances = {
+        getCharacter(LocalPlayer)
+    }
 
-    local viewport = camera.ViewportSize
-
-    FOVCircle.Position = Vector2.new(
-        viewport.X / 2,
-        viewport.Y / 2
+    local result = Workspace:Raycast(
+        origin,
+        direction,
+        params
     )
 
-    FOVCircle.Radius = Settings.FOV
-    FOVCircle.Thickness = Settings.FOVThickness
-    FOVCircle.Visible = Settings.ShowFOV and Settings.Enabled
+    if not result then
+        return true
+    end
+
+    return result.Instance:IsDescendantOf(part.Parent)
 end
 
+local function getBestTarget()
+    local center = Camera.ViewportSize / 2
 
---========================================================--
--- TARGET
---========================================================--
+    local bestPlayer = nil
+    local bestPart = nil
+    local bestScore = math.huge
 
-function Aimbot:GetBestTarget()
-    if not Settings.Enabled then
-        return nil
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and not sameTeam(player) then
+
+            local character = getCharacter(player)
+
+            if character and isAlive(character) then
+                local part = character:FindFirstChild(Settings.TargetPart)
+
+                if part then
+                    local screenPos, onScreen =
+                        Camera:WorldToViewportPoint(part.Position)
+
+                    if onScreen and screenPos.Z > 0 then
+
+                        local screenDistance =
+                            (Vector2.new(
+                                screenPos.X,
+                                screenPos.Y
+                            ) - center).Magnitude
+
+                        if screenDistance <= Settings.FOV then
+
+                            local worldDistance =
+                                (part.Position - Camera.CFrame.Position).Magnitude
+
+                            if worldDistance <= Settings.MaxDistance then
+
+                                if visible(part) then
+                                    if screenDistance < bestScore then
+                                        bestScore = screenDistance
+                                        bestPlayer = player
+                                        bestPart = part
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
     end
 
-    local target
-
-    pcall(function()
-        target = AimAssistController.GetBestTarget()
-    end)
-
-    if not target then
-        return nil
-    end
-
-    local part = getTargetPart(target)
-
-    if not part then
-        return nil
-    end
-
-    local camera = getCamera()
-
-    if not camera then
-        return nil
-    end
-
-    local distance = (part.Position - camera.CFrame.Position).Magnitude
-
-    if distance > Settings.MaxDistance then
-        return nil
-    end
-
-    return target, part
+    return bestPlayer, bestPart, bestScore
 end
 
-
---========================================================--
--- AIM ASSIST NATIVO
---========================================================--
-
-local function enableNativeAimAssist()
-    if not Settings.UseNativeAimAssist then
-        return
-    end
-
-    local success, err = pcall(function()
-        AimAssistController.SetEnabled(true)
-    end)
-
-    if success then
-        debugPrint("AimAssistController ativado.")
-    else
-        warn("[Zyrex Aimbot] Falha ao ativar AimAssistController:", err)
-    end
-end
-
-
-local function disableNativeAimAssist()
-    pcall(function()
-        AimAssistController.SetEnabled(false)
-    end)
-
-    debugPrint("AimAssistController desativado.")
-end
-
-
---========================================================--
--- LOOP
---========================================================--
-
-local function update()
-    if Destroyed then
-        return
-    end
-
-    updateFOV()
+-- Diagnóstico
+RunService.RenderStepped:Connect(function()
 
     if not Settings.Enabled then
         return
     end
 
-    local target, part = Aimbot:GetBestTarget()
+    local player, part, score = getBestTarget()
 
-    if target and part then
-        debugPrint(
-            "Target:",
-            target.Name,
-            "Part:",
-            part.Name
+    if player and part then
+        print(
+            string.format(
+                "[AIM] alvo=%s parte=%s FOV=%.1f",
+                player.Name,
+                part.Name,
+                score
+            )
         )
     end
-end
+end)
 
-
---========================================================--
--- API
---========================================================--
-
-function Aimbot:SetEnabled(state)
-    state = state == true
-
-    Settings.Enabled = state
-
-    if state then
-        enableNativeAimAssist()
-    else
-        disableNativeAimAssist()
-    end
-
-    updateFOV()
-
-    debugPrint("Enabled =", state)
-end
-
-
-function Aimbot:IsEnabled()
-    return Settings.Enabled
-end
-
-
-function Aimbot:SetSetting(name, value)
-    if Settings[name] == nil then
-        warn("[Zyrex Aimbot] Setting inexistente:", name)
-        return
-    end
-
-    Settings[name] = value
-
-    if name == "FOV" then
-        updateFOV()
-    elseif name == "ShowFOV" then
-        updateFOV()
-    elseif name == "FOVThickness" then
-        updateFOV()
-    end
-end
-
-
-function Aimbot:GetSetting(name)
-    return Settings[name]
-end
-
-
-function Aimbot:GetSettings()
-    local copy = {}
-
-    for key, value in pairs(Settings) do
-        copy[key] = value
-    end
-
-    return copy
-end
-
-
-function Aimbot:GetTarget()
-    local target, part = Aimbot:GetBestTarget()
-
-    return target, part
-end
-
-
-function Aimbot:Destroy()
-    if Destroyed then
-        return
-    end
-
-    Destroyed = true
-
-    Settings.Enabled = false
-
-    disableNativeAimAssist()
-
-    if RenderConnection then
-        RenderConnection:Disconnect()
-        RenderConnection = nil
-    end
-
-    if FOVCircle then
-        pcall(function()
-            FOVCircle:Remove()
-        end)
-
-        FOVCircle = nil
-    end
-
-    debugPrint("Aimbot destruído.")
-end
-
-
---========================================================--
--- INIT
---========================================================--
-
-createFOV()
-
-RenderConnection = RunService.RenderStepped:Connect(update)
-
-return Aimbot
+print("[AIM] Diagnostic iniciado")
