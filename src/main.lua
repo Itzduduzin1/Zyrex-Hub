@@ -97,7 +97,7 @@ local function OpenHub()
     local ESP = loadModule("src/Visual/Esp.lua")
     local Weapon = loadModule("src/Visual/Weapon.lua")
     local WorldEffects = loadModule("src/Visual/WorldEffects.lua")
-    local Aimbot = loadModule("src/Combat/Aimbot.lua")
+    local Aimbot = loadModule("src/Combat/Aimbot1.lua")
     local Hitbox = loadModule("src/Combat/Hitbox.lua")
 
     if Hitbox and Hitbox.Init then
